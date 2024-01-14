@@ -43,6 +43,34 @@ frame-level task.
 - **Terrain difficulty**: the different terrain segments have different difficulty levels based on
 terrain roughness or steepness of the surface. This is a frame-level task.
 
+### Loading the data
+You can load the data from `robot_dataset.npy` using the following code:
+```python
+import numpy as np
+
+data = np.load(os.path.join(self.root, 'robot_dataset.npy'), allow_pickle=True).item()
+# names contains the class names for each label
+names = data.pop('names')
+
+# data is a dictionary that contains the behavior timeseries and labels
+state = data['dof_pos']
+action = data['dof_vel']
+
+print(data.keys())
+```
+
+- all the arrays are of shape `(num_sequences, *)` 
+- state and action are the robot's joint positions and velocities and are of shape `(num_sequences, num_timesteps, num_features)`
+- sequence_level labels are of shape `(num_sequences,)`
+- frame_level labels are of shape `(num_sequences, num_timesteps)`
+
+To use the same test set as in our BAMS paper call `train_test_split` with `random_state=42` and `test_size=0.8`:
+```python
+from sklearn.model_selection import train_test_split
+
+num_sequences = state.shape[0]
+train_idx, test_idx = train_test_split(np.arange(num_sequences), test_size=0.8, random_state=42)
+```
 
 ## ⚙️ Using  our scripts to generate your own data
 If you are looking to generate your own data, please follow the instructions below.
@@ -84,7 +112,7 @@ can be run with the following command:
 ### Advanced Usage
 1. Adding new terrains: Terrains are defined in `legged_gym/utils/terrain_utils.py`.
 Terrains are defined based on a height map, and can be controled using user-defined 
-parameters.
+parameters. See the `visualizing_terrains.ipynb` notebook.
 2. Terrain sampling: the proportion of each terrain type can be changed by modifying 
 `env_cfg.terrain.terrain_proportions` in `generate_data.py`.
 
