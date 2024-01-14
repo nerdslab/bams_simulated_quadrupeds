@@ -1,21 +1,26 @@
 # Simulated Quadrupeds Dataset & Scripts from [BAMS](https://multiscale-behavior.github.io/)
 This is a fork of the [legged_gym project](https://leggedrobotics.github.io/legged_gym/)
 that uses  NVIDIA's Isaac Gym. 
-It was modified to enable the generation of simulated quadrupeds data along with labeled ground truth, to enable the evaluation [multi-scale behavior analysis](https://multiscale-behavior.github.io/) methods.
+It was modified to enable the generation of simulated quadrupeds data along with labeled ground truth, to enable the evaluation of [multi-scale behavior analysis](https://multiscale-behavior.github.io/) methods.
 
 
 ⬇️ Download the Simulated Quadrupeds Dataset [here](https://drive.google.com/file/d/1q0a6etvda3XJ498lkDdfpbkz6zGqYXAs/view?usp=sharing).
 
-**Why this dataset?** Simulation-based data collection enables access to information that is generally
+![](simulated_quadrupeds.gif)
+
+## 🤖 Dataset Details
+
+### Why this dataset?
+Simulation-based data collection enables access to information that is generally
 inaccessible or hard to acquire in a real-world setting. Unlike noisy measurements coming from the
 camera-based feature extractor, physics engines do not suffer from
 the problem of noise. Instead, they provide accurate ground-truth information about the creature and
 the world state free of charge. Access to such information is at times critical for scrutinizing the
 capabilities of the learning algorithms.
 
-![](simulated_quadrupeds.gif)
 
-**Simulation details.** We record a total of 5182 trajectories. 2756 were generated for robots of type
+### Simulation details 
+We record a total of 5182 trajectories. 2756 were generated for robots of type
 ANYmal B and 2426 sequences were generated for robots of type ANYmal C. These are quadruped
 robots, which means that they have four legs. Each leg has 3 degrees of freedoms - hip, shank and
 thigh. The position and velocities of these degrees of freedom for all 4 legs were recorded. This
@@ -23,23 +28,23 @@ results in 24 features for each robot. Robots are generated while traversing an 
 environment with different terrain types and traversal difficulty. We only keep
 trajectories that correspond to a successful traversal.
 
-**Labels.** Labels included:
-- Robot type: the robot can either be of type "ANYmal B" or "ANYmal C". These robots
+### Recorded labels:
+- **Robot type**: the robot can either be of type "ANYmal B" or "ANYmal C". These robots
 have the same degrees of freedom and tracked joints but differ by their morphology. This is
 a sequence-level task.
-- Linear velocity: the command of the robot is a constant velocity vector. The amplitude
+- **Linear velocity**: the command of the robot is a constant velocity vector. The amplitude
 of the velocity dictates how fast the robot is commanded to traverse the environment. A
 higher velocity would translate into more clumpsy and more risk-taking behavior. This is a
 sequence-level task.
-- Terrain type: the environment is generated with multiple segments of five terrain types
+- **Terrain type**: the environment is generated with multiple segments of five terrain types
 that are categorized as: flat surfaces, pits, hills, ascending and descending stairs. This is a
 frame-level task.
-- Terrain slope: the slope of the surface the robot is walking on. This is a frame-level task.
-- Terrain difficulty: the different terrain segments have different difficulty levels based on
+- **Terrain slope**: the slope of the surface the robot is walking on. This is a frame-level task.
+- **Terrain difficulty**: the different terrain segments have different difficulty levels based on
 terrain roughness or steepness of the surface. This is a frame-level task.
 
 
-## Using  our scripts to generate your own data
+## ⚙️ Using  our scripts to generate your own data
 If you are looking to generate your own data, please follow the instructions below.
 
 ### Installation
@@ -83,7 +88,7 @@ parameters.
 2. Terrain sampling: the proportion of each terrain type can be changed by modifying 
 `env_cfg.terrain.terrain_proportions` in `generate_data.py`.
 
-### Citation
+## 📕 Citation
 
 If you find the dataset and/or code useful for your research, please consider citing our work:
 ```
