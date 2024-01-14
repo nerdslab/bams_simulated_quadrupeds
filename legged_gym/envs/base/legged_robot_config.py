@@ -44,8 +44,9 @@ class LeggedRobotCfg(BaseConfig):
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
-        border_size = 25 # [m]
+        border_size = 10 # [m]
         curriculum = True
+
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
@@ -55,27 +56,28 @@ class LeggedRobotCfg(BaseConfig):
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         selected = False # select a unique terrain type and pass all arguments
         terrain_kwargs = None # Dict of arguments for selected terrain
-        max_init_terrain_level = 5 # starting curriculum state
-        terrain_length = 8.
-        terrain_width = 8.
-        num_rows= 10 # number of terrain rows (levels)
-        num_cols = 20 # number of terrain cols (types)
-        # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
-        terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
+        max_init_terrain_level = 0 # starting curriculum state
+        terrain_length = 12.
+        terrain_width = 12.
+        num_rows = 2 # number of terrain rows (levels)
+        num_cols = 10 # number of terrain cols (types)
+        #terrain_types: [smooth slope, rough slope, stairs up, stairs down, discrete]
+        terrain_proportions = [0., 0, 0, 1 , 0]
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
 
     class commands:
-        curriculum = False
+        curriculum = True
         max_curriculum = 1.
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-1.0, 1.0] # min max [m/s]
-            lin_vel_y = [-1.0, 1.0]   # min max [m/s]
-            ang_vel_yaw = [-1, 1]    # min max [rad/s]
-            heading = [-3.14, 3.14]
+            lin_vel_x = [1, 1 ] # min max [m/s]
+            lin_vel_y = [-0.0001, 0.001]   # min max [m/s]
+            ang_vel_yaw = [0, 0]    # min max [rad/s]
+            #heading = [-3.14, 3.14]
+            heading  =[ -0,0]
 
     class init_state:
         pos = [0.0, 0.0, 1.] # x,y,z [m]
@@ -91,6 +93,8 @@ class LeggedRobotCfg(BaseConfig):
         # PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
+        target_angle = 0
+        default = 0
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT

@@ -579,14 +579,14 @@ class LeggedRobot(BaseTask):
     def _create_heightfield(self):
         """ Adds a heightfield terrain to the simulation, sets parameters based on the cfg.
         """
-        hf_params = gymapi.HeightFieldParams()
-        hf_params.column_scale = self.terrain.cfg.horizontal_scale
-        hf_params.row_scale = self.terrain.cfg.horizontal_scale
-        hf_params.vertical_scale = self.terrain.cfg.vertical_scale
+        hf_params = gymapi.HeightFieldProperties()
+        hf_params.column_scale = self.terrain.horizontal_scale
+        hf_params.row_scale = self.terrain.horizontal_scale
+        hf_params.vertical_scale = self.terrain.vertical_scale
         hf_params.nbRows = self.terrain.tot_cols
         hf_params.nbColumns = self.terrain.tot_rows 
-        hf_params.transform.p.x = -self.terrain.cfg.border_size 
-        hf_params.transform.p.y = -self.terrain.cfg.border_size
+        hf_params.transform.p.x = -self.terrain.border_size 
+        hf_params.transform.p.y = -self.terrain.border_size
         hf_params.transform.p.z = 0.0
         hf_params.static_friction = self.cfg.terrain.static_friction
         hf_params.dynamic_friction = self.cfg.terrain.dynamic_friction
@@ -668,6 +668,7 @@ class LeggedRobot(BaseTask):
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
+        self.body_mass = []
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
@@ -682,6 +683,7 @@ class LeggedRobot(BaseTask):
             self.gym.set_actor_dof_properties(env_handle, actor_handle, dof_props)
             body_props = self.gym.get_actor_rigid_body_properties(env_handle, actor_handle)
             body_props = self._process_rigid_body_props(body_props, i)
+            self.body_mass.append(body_props[0].mass)
             self.gym.set_actor_rigid_body_properties(env_handle, actor_handle, body_props, recomputeInertia=True)
             self.envs.append(env_handle)
             self.actor_handles.append(actor_handle)
@@ -707,7 +709,7 @@ class LeggedRobot(BaseTask):
             self.env_origins = torch.zeros(self.num_envs, 3, device=self.device, requires_grad=False)
             # put robots at the origins defined by the terrain
             max_init_level = self.cfg.terrain.max_init_terrain_level
-            if not self.cfg.terrain.curriculum: max_init_level = self.cfg.terrain.num_rows - 1
+            # if not self.cfg.terrain.curriculum: max_init_level = self.cfg.terrain.num_rows - 1
             self.terrain_levels = torch.randint(0, max_init_level+1, (self.num_envs,), device=self.device)
             self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (self.num_envs/self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
             self.max_terrain_level = self.cfg.terrain.num_rows

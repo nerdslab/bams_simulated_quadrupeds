@@ -1,105 +1,108 @@
-# Isaac Gym Environments for Legged Robots #
-This repository provides the environment used to train ANYmal (and other robots) to walk on rough terrain using NVIDIA's Isaac Gym.
-It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.  
-
-**Maintainer**: Nikita Rudin  
-**Affiliation**: Robotic Systems Lab, ETH Zurich  
-**Contact**: rudinn@ethz.ch  
-
----
-
-### :bell: Announcement (09.01.2024) ###
-
-With the shift from Isaac Gym to Isaac Sim at NVIDIA, we have migrated all the environments from this work to [Orbit](https://github.com/NVIDIA-Omniverse/Orbit). Following this migration, this repository will receive limited updates and support. We encourage all users to migrate to the new framework for their applications.
-
-Information about this work's locomotion-related tasks in Orbit is available [here](https://isaac-orbit.github.io/orbit/source/features/environments.html#locomotion).
-
----
-
-### Useful Links ###
-
-Project website: https://leggedrobotics.github.io/legged_gym/   
-Paper: https://arxiv.org/abs/2109.11978
-
-### Installation ###
-1. Create a new python virtual env with python 3.6, 3.7 or 3.8 (3.8 recommended)
-2. Install pytorch 1.10 with cuda-11.3:
-    - `pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
-3. Install Isaac Gym
-   - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
-   - `cd isaacgym/python && pip install -e .`
-   - Try running an example `cd examples && python 1080_balls_of_solitude.py`
-   - For troubleshooting check docs `isaacgym/docs/index.html`)
-4. Install rsl_rl (PPO implementation)
-   - Clone https://github.com/leggedrobotics/rsl_rl
-   -  `cd rsl_rl && git checkout v1.0.2 && pip install -e .` 
-5. Install legged_gym
-    - Clone this repository
-   - `cd legged_gym && pip install -e .`
-
-### CODE STRUCTURE ###
-1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one containing  all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).  
-2. Both env and config classes use inheritance.  
-3. Each non-zero reward scale specified in `cfg` will add a function with a corresponding name to the list of elements which will be summed to get the total reward.  
-4. Tasks must be registered using `task_registry.register(name, EnvClass, EnvConfig, TrainConfig)`. This is done in `envs/__init__.py`, but can also be done from outside of this repository.  
-
-### Usage ###
-1. Train:  
-  ```python legged_gym/scripts/train.py --task=anymal_c_flat```
-    -  To run on CPU add following arguments: `--sim_device=cpu`, `--rl_device=cpu` (sim on CPU and rl on GPU is possible).
-    -  To run headless (no rendering) add `--headless`.
-    - **Important**: To improve performance, once the training starts press `v` to stop the rendering. You can then enable it later to check the progress.
-    - The trained policy is saved in `issacgym_anymal/logs/<experiment_name>/<date_time>_<run_name>/model_<iteration>.pt`. Where `<experiment_name>` and `<run_name>` are defined in the train config.
-    -  The following command line arguments override the values set in the config files:
-     - --task TASK: Task name.
-     - --resume:   Resume training from a checkpoint
-     - --experiment_name EXPERIMENT_NAME: Name of the experiment to run or load.
-     - --run_name RUN_NAME:  Name of the run.
-     - --load_run LOAD_RUN:   Name of the run to load when resume=True. If -1: will load the last run.
-     - --checkpoint CHECKPOINT:  Saved model checkpoint number. If -1: will load the last checkpoint.
-     - --num_envs NUM_ENVS:  Number of environments to create.
-     - --seed SEED:  Random seed.
-     - --max_iterations MAX_ITERATIONS:  Maximum number of training iterations.
-2. Play a trained policy:  
-```python legged_gym/scripts/play.py --task=anymal_c_flat```
-    - By default, the loaded policy is the last model of the last run of the experiment folder.
-    - Other runs/model iteration can be selected by setting `load_run` and `checkpoint` in the train config.
-
-### Adding a new environment ###
-The base environment `legged_robot` implements a rough terrain locomotion task. The corresponding cfg does not specify a robot asset (URDF/ MJCF) and has no reward scales. 
-
-1. Add a new folder to `envs/` with `'<your_env>_config.py`, which inherit from an existing environment cfgs  
-2. If adding a new robot:
-    - Add the corresponding assets to `resources/`.
-    - In `cfg` set the asset path, define body names, default_joint_positions and PD gains. Specify the desired `train_cfg` and the name of the environment (python class).
-    - In `train_cfg` set `experiment_name` and `run_name`
-3. (If needed) implement your environment in <your_env>.py, inherit from an existing environment, overwrite the desired functions and/or add your reward functions.
-4. Register your env in `isaacgym_anymal/envs/__init__.py`.
-5. Modify/Tune other parameters in your `cfg`, `cfg_train` as needed. To remove a reward set its scale to zero. Do not modify parameters of other envs!
+# Simulated Quadrupeds Dataset & Scripts from [BAMS](https://multiscale-behavior.github.io/)
+This is a fork of the [legged_gym project](https://leggedrobotics.github.io/legged_gym/)
+that uses  NVIDIA's Isaac Gym. 
+It was modified to enable the generation of simulated quadrupeds data along with labeled ground truth, to enable the evaluation [multi-scale behavior analysis](https://multiscale-behavior.github.io/) methods.
 
 
-### Troubleshooting ###
-1. If you get the following error: `ImportError: libpython3.8m.so.1.0: cannot open shared object file: No such file or directory`, do: `sudo apt install libpython3.8`. It is also possible that you need to do `export LD_LIBRARY_PATH=/path/to/libpython/directory` / `export LD_LIBRARY_PATH=/path/to/conda/envs/your_env/lib`(for conda user. Replace /path/to/ to the corresponding path.).
+⬇️ Download the Simulated Quadrupeds Dataset [here](https://drive.google.com/file/d/1q0a6etvda3XJ498lkDdfpbkz6zGqYXAs/view?usp=sharing).
 
-### Known Issues ###
-1. The contact forces reported by `net_contact_force_tensor` are unreliable when simulating on GPU with a triangle mesh terrain. A workaround is to use force sensors, but the force are propagated through the sensors of consecutive bodies resulting in an undesirable behaviour. However, for a legged robot it is possible to add sensors to the feet/end effector only and get the expected results. When using the force sensors make sure to exclude gravity from the reported forces with `sensor_options.enable_forward_dynamics_forces`. Example:
+**Why this dataset?** Simulation-based data collection enables access to information that is generally
+inaccessible or hard to acquire in a real-world setting. Unlike noisy measurements coming from the
+camera-based feature extractor, physics engines do not suffer from
+the problem of noise. Instead, they provide accurate ground-truth information about the creature and
+the world state free of charge. Access to such information is at times critical for scrutinizing the
+capabilities of the learning algorithms.
+
+![](simulated_quadrupeds.gif)
+
+**Simulation details.** We record a total of 5182 trajectories. 2756 were generated for robots of type
+ANYmal B and 2426 sequences were generated for robots of type ANYmal C. These are quadruped
+robots, which means that they have four legs. Each leg has 3 degrees of freedoms - hip, shank and
+thigh. The position and velocities of these degrees of freedom for all 4 legs were recorded. This
+results in 24 features for each robot. Robots are generated while traversing an procedurally generated
+environment with different terrain types and traversal difficulty. We only keep
+trajectories that correspond to a successful traversal.
+
+**Labels.** Labels included:
+- Robot type: the robot can either be of type "ANYmal B" or "ANYmal C". These robots
+have the same degrees of freedom and tracked joints but differ by their morphology. This is
+a sequence-level task.
+- Linear velocity: the command of the robot is a constant velocity vector. The amplitude
+of the velocity dictates how fast the robot is commanded to traverse the environment. A
+higher velocity would translate into more clumpsy and more risk-taking behavior. This is a
+sequence-level task.
+- Terrain type: the environment is generated with multiple segments of five terrain types
+that are categorized as: flat surfaces, pits, hills, ascending and descending stairs. This is a
+frame-level task.
+- Terrain slope: the slope of the surface the robot is walking on. This is a frame-level task.
+- Terrain difficulty: the different terrain segments have different difficulty levels based on
+terrain roughness or steepness of the surface. This is a frame-level task.
+
+
+## Using  our scripts to generate your own data
+If you are looking to generate your own data, please follow the instructions below.
+
+### Installation
+Please refer to the [legged_gym](https://github.com/leggedrobotics/legged_gym) repo
+for installation instructions.
+
+### Usage
+1. Training RL policy: Follow [instructions](https://github.com/leggedrobotics/legged_gym) to train
+your own policy, or use our pretrained policies that can be found in the `logs/` folder.
+2. Generating data: We provide a script to generate data from a trained policy. The script 
+can be run with the following command:
+    ```
+    python generate_data.py --task=<task_name> --target_vel=<target_velocity> --output=<output_file>
+    ```
+    - Changing the `task_name` will change the robot morphology, while `target_velocity` will change the velocity
+    with which the robot traverses the terrain. 
+    - Each time the script is run, a new random terrain will be generated.
+    - Note that higher velocities will result in more instability (robots falling), 
+    and thus less "valid" data will be generated. Simply run this script multiple times 
+    as needed if you are looking to get balanced data.
+    - By default, the loaded policy is the last model of the last run of the experiment folder, meaning that if you do not 
+    train your own model, our provided pretrained models will be used.
+
+    Examples:
+    ```
+    python generate_data.py --task=anymal_c_rough --target_vel=1.0 --output=./data/anymal_c_vel_1.0_01.npy
+    ```
+    ```
+    python generate_data.py --task=anymal_b --target_vel=1.0 --output=./data/anymal_b_vel_1.0_01.npy
+    ```
+3. Combining data: The generated data can be combined using the `combine_files_and_prepare_data.py` script:
+    ```
+    python combine_files_and_prepare_data.py
+    ```
+    
+
+### Advanced Usage
+1. Adding new terrains: Terrains are defined in `legged_gym/utils/terrain_utils.py`.
+Terrains are defined based on a height map, and can be controled using user-defined 
+parameters.
+2. Terrain sampling: the proportion of each terrain type can be changed by modifying 
+`env_cfg.terrain.terrain_proportions` in `generate_data.py`.
+
+### Citation
+
+If you find the dataset and/or code useful for your research, please consider citing our work:
 ```
-    sensor_pose = gymapi.Transform()
-    for name in feet_names:
-        sensor_options = gymapi.ForceSensorProperties()
-        sensor_options.enable_forward_dynamics_forces = False # for example gravity
-        sensor_options.enable_constraint_solver_forces = True # for example contacts
-        sensor_options.use_world_frame = True # report forces in world frame (easier to get vertical components)
-        index = self.gym.find_asset_rigid_body_index(robot_asset, name)
-        self.gym.create_asset_force_sensor(robot_asset, index, sensor_pose, sensor_options)
-    (...)
-
-    sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim)
-    self.gym.refresh_force_sensor_tensor(self.sim)
-    force_sensor_readings = gymtorch.wrap_tensor(sensor_tensor)
-    self.sensor_forces = force_sensor_readings.view(self.num_envs, 4, 6)[..., :3]
-    (...)
-
-    self.gym.refresh_force_sensor_tensor(self.sim)
-    contact = self.sensor_forces[:, :, 2] > 1.
+@inproceedings{azabou2023relax,
+    title={Relax, it doesn{\textquoteright}t matter how you get there: A new self-supervised approach for multi-timescale behavior analysis},
+    author={Mehdi Azabou and Michael Jacob Mendelson and Nauman Ahad and Maks Sorokin and Shantanu Thakoor and Carolina Urzay and Eva L Dyer},
+    booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+    year={2023},
+    url={https://openreview.net/forum?id=RInTOCEL3l}
+}
+ ```
+and the original `legged_gym` work:
+```
+@inproceedings{rudin2022learning,
+  title={Learning to walk in minutes using massively parallel deep reinforcement learning},
+  author={Rudin, Nikita and Hoeller, David and Reist, Philipp and Hutter, Marco},
+  booktitle={Conference on Robot Learning},
+  pages={91--100},
+  year={2022},
+  organization={PMLR}
+}
 ```
